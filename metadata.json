@@ -1,0 +1,8 @@
+{
+  "name": "HireLens",
+  "description": "AI-powered job search and resume tailoring agent that optimizes resumes for specific LinkedIn job matches.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
