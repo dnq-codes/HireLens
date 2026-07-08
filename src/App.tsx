@@ -325,22 +325,43 @@ export default function App() {
   const handleFile = (file: File) => {
     setFileName(file.name);
     if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-      // Strictly block the raw file reader binary string from dumping into textarea
-      const cleanSummary = `# ALEX RIVERA
-Email: alex.rivera@example.com | Phone: +1 (555) 019-2834
-Location: San Francisco, CA
-
-## Professional Experience
-- Senior Frontend Engineer at TechFlow Solutions
-- Frontend Developer at GrowthLab Inc
-
-## Core Competencies
-- React, TypeScript, Tailwind CSS, Node.js, Next.js, Redux
-
-## Education
-- B.S. in Computer Science, University of California, Berkeley`;
-
-      setResumeText(cleanSummary);
+      setResumeText("Extracting text from uploaded PDF... Please wait...");
+      setError(null);
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        if (event.target?.result) {
+          try {
+            const arrayBuffer = event.target.result as ArrayBuffer;
+            const pdfjsLib = (window as any).pdfjsLib;
+            if (!pdfjsLib) {
+              throw new Error("PDF.js library is not loaded. Please try again in a few seconds.");
+            }
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdf = await loadingTask.promise;
+            let fullText = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map((item: any) => item.str).join(" ");
+              fullText += pageText + "\n";
+            }
+            if (fullText.trim()) {
+              setResumeText(fullText.trim());
+            } else {
+              throw new Error("No text content could be extracted from this PDF. Please copy-paste the text manually.");
+            }
+          } catch (err: any) {
+            console.error("Error parsing PDF file:", err);
+            setError(err.message || "Failed to extract text from PDF.");
+            setResumeText("");
+          }
+        }
+      };
+      reader.onerror = () => {
+        setError("Error reading file.");
+        setResumeText("");
+      };
+      reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
       reader.onload = (event) => {
